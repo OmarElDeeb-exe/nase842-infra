@@ -1,0 +1,32 @@
+# Terraform local state - NEVER COMMIT
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# Terraform provider downloads
+.terraform/
+
+# Sensitive variables
+*.tfvars
+*.tfvars.json
+.env
+.env.*
+
+# Terraform plan files
+*.tfplan
+tfplan
+plan.out
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Local Terraform overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Private keys and certificates
+*.pem
+*.key
