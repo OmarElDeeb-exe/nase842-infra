@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "eu-west-1"
 
   ignore_tags {
     keys = [
@@ -34,8 +34,9 @@ resource "aws_ecr_repository" "flask" {
   }
 
   tags = {
-    Name    = "nase842-flask"
-    Project = "NASE-842"
+    Name    = "Change Tag"
+    Project = "Change Tag"
+    Environemt = "Production"
   }
 }
 
