@@ -9,8 +9,17 @@ terraform {
   }
 }
 
+
 provider "aws" {
-  region = "eu-west-1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Environment = "Production"
+      ManagedBy   = "Terraform"
+      Assessment  = "TfTagsTesting"
+    }
+  }
 
   ignore_tags {
     keys = [
@@ -20,6 +29,7 @@ provider "aws" {
     ]
   }
 }
+
 
 resource "aws_ecr_repository" "flask" {
   name                 = "nase842-flask"
