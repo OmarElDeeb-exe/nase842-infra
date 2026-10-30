@@ -69,7 +69,7 @@ resource "aws_lambda_function" "flask" {
   image_uri     = "${aws_ecr_repository.flask.repository_url}:v5"
   architectures = ["x86_64"]
 
-  memory_size = 512
+  memory_size = 1024
   timeout     = 20
 
   lifecycle {
