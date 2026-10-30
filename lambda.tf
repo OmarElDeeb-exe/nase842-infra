@@ -1,4 +1,4 @@
-# IAM role used by Lambda
+# IAM execution role for Lambda
 resource "aws_iam_role" "lambda_exec" {
   name = "nase842-lambda-exec"
 
@@ -12,23 +12,27 @@ resource "aws_iam_role" "lambda_exec" {
       }
     }]
   })
+
+  tags = {
+    Project = "NASE-842"
+  }
 }
 
-# Allow Lambda to write CloudWatch logs
+# Allow Lambda to write logs to CloudWatch
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Allow Lambda to retrieve the Docker image from ECR
+# Allow Lambda to retrieve its container image from ECR
 resource "aws_ecr_repository_policy" "lambda_access" {
   repository = aws_ecr_repository.flask.name
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid    = "LambdaECRImageRetrievalPolicy"
-      Effect = "Allow"
+      Sid       = "LambdaECRImageRetrievalPolicy"
+      Effect    = "Allow"
       Principal = {
         Service = "lambda.amazonaws.com"
       }
@@ -40,8 +44,22 @@ resource "aws_ecr_repository_policy" "lambda_access" {
   })
 }
 
-# Flask backend running on Lambda
+# Flask backend running as an AWS Lambda container
 resource "aws_lambda_function" "flask" {
+  function_name = "nase842-flask"
+
+  description = "NASE-842 Terraform infrastructure rebuild assessment"
+
+  role          = aws_iam_role.lambda_exec.arn
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.flask.repository_url}:v5"
+  architectures = ["x86_64"]
+
+  # Updated configuration for assessment
+  memory_size = 1152
+  timeout     = 25
+
+  # Environment variables used by Flask
   environment {
     variables = {
       DB_SECRET_ARN  = aws_db_instance.postgres.master_user_secret[0].secret_arn
@@ -51,6 +69,7 @@ resource "aws_lambda_function" "flask" {
     }
   }
 
+  # Private VPC connectivity
   vpc_config {
     subnet_ids = [
       aws_subnet.private_a.id,
@@ -62,16 +81,7 @@ resource "aws_lambda_function" "flask" {
     ]
   }
 
-  function_name = "nase842-flask"
-  role          = aws_iam_role.lambda_exec.arn
-
-  package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.flask.repository_url}:v5"
-  architectures = ["x86_64"]
-
-  memory_size = 1024
-  timeout     = 20
-
+  # GitHub Actions manages future image deployments
   lifecycle {
     ignore_changes = [image_uri]
   }
@@ -82,6 +92,7 @@ resource "aws_lambda_function" "flask" {
   ]
 
   tags = {
+    Name    = "nase842-flask"
     Project = "NASE-842"
   }
 }
