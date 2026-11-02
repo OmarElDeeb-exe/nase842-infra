@@ -13,7 +13,7 @@ This directory contains the independent Ireland rebuild of the NASE-842 applicat
 | HTTP API | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com |
 | API health check | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com/api/ping |
 | Lambda function | `nase842-flask` |
-| Lambda container image | Immutable CI/CD image tag (latest verified run listed below) |
+| Lambda container image | Immutable CI/CD image tag (see latest backend Actions run or Lambda configuration) |
 | CloudFront distribution ID | `E3TD8SX401FEWB` |
 | Frontend S3 bucket | `nase842-frontend-rebuild-253650698585-eu-west-1` |
 | RDS instance | `nase842-postgres` (`db.t4g.small`) |
@@ -76,7 +76,7 @@ The API exposes a health-check route (`GET /api/ping`) and an application proxy 
 
 ## Application deployment
 
-The original Ireland backend was deployed as image **`v7`**. The successful Ireland backend pipeline run on **2026-11-02** subsequently deployed image tag **`b45e40a96280c24c24c672f32278b11a01426540-41422557063-1`** (verified from the workflow logs). The Terraform configuration retains the `v7` bootstrap reference:
+The Ireland backend was initially deployed as image **`v7`**, and subsequent GitHub Actions deployments publish immutable commit/run-tagged images. The current runtime image can be verified in the Ireland Lambda configuration or the [backend deployment runs](https://github.com/OmarElDeeb-exe/nase842-backend/actions/workflows/deploy-ireland.yml). Terraform retains the `v7` bootstrap reference:
 
 ```hcl
 image_uri = "${aws_ecr_repository.flask.repository_url}:v7"
@@ -95,7 +95,7 @@ The original GitHub Actions workflows continue to deploy to `us-east-1`. Dedicat
 - [Ireland backend deployment](https://github.com/OmarElDeeb-exe/nase842-backend/blob/main/.github/workflows/deploy-ireland.yml)
 - [Ireland frontend deployment](https://github.com/OmarElDeeb-exe/nase842-frontend/blob/main/.github/workflows/deploy-ireland.yml)
 
-These Ireland workflows use explicit `workflow_dispatch` triggers on the `main` branch. Both were executed successfully on **2026-11-02**: [backend run #1](https://github.com/OmarElDeeb-exe/nase842-backend/actions/runs/41422557063) and [frontend run #1](https://github.com/OmarElDeeb-exe/nase842-frontend/actions/runs/41422849708).
+These Ireland workflows deploy automatically when changes are pushed to `main`, and they can also be started manually with `workflow_dispatch`. The Virginia workflows are manual-only. Successful automatic runs on **2026-11-02**: [backend](https://github.com/OmarElDeeb-exe/nase842-backend/actions/runs/41426454452) and [frontend](https://github.com/OmarElDeeb-exe/nase842-frontend/actions/runs/41426481404).
 
 ## Verification
 
