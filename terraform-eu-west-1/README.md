@@ -1,130 +1,130 @@
-# NASE-842 — Ireland Infrastructure (eu-west-1)
+# NASE-842 — Ireland Infrastructure
 
-This directory contains the **independent Ireland rebuild** of the NASE-842 RealWorld/Conduit application. The original **Virginia (us-east-1)** Terraform configuration remains at the repository root. Both environments use separate AWS resources and Terraform state; Ireland is **not** an automatic failover or a continuously replicated copy of Virginia.
+**Region:** `eu-west-1` (Ireland)  
+**Project:** RealWorld / Conduit — Vue frontend, Flask API, PostgreSQL, Terraform and AWS
 
-The Ireland deployment was created and tested after changing the AWS region, VPC/subnet CIDRs, RDS instance class, frontend S3 bucket name, and AWS resource tags.
+This directory contains the independent Ireland rebuild of the NASE-842 application. The Terraform configuration at the [repository root](../README.md) represents the original `us-east-1` environment. The Ireland and Virginia deployments have separate infrastructure and Terraform state.
 
-## Live environment
+## Deployment endpoints
 
-| Component | Ireland deployment |
+| Component | Ireland environment |
 | --- | --- |
-| Region | `eu-west-1` (Ireland) |
-| AWS account | `253650698585` (shared assessment account) |
-| Website (HTTPS) | https://dvqn80eroo0tk.cloudfront.net |
-| Backend API | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com |
+| Website | https://dvqn80eroo0tk.cloudfront.net |
+| HTTP API | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com |
 | API health check | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com/api/ping |
 | Lambda function | `nase842-flask` |
-| Current Lambda image | `253650698585.dkr.ecr.eu-west-1.amazonaws.com/nase842-flask:v7` |
-| CloudFront distribution | `E3TD8SX401FEWB` |
+| Lambda container image | `nase842-flask:v7` in Ireland ECR |
+| CloudFront distribution ID | `E3TD8SX401FEWB` |
 | Frontend S3 bucket | `nase842-frontend-rebuild-253650698585-eu-west-1` |
-| RDS instance | `nase842-postgres` — PostgreSQL 15, `db.t4g.small` |
+| RDS instance | `nase842-postgres` (`db.t4g.small`) |
 
-The CloudFront hostname is the default AWS-generated domain. No custom Ireland DNS name or ACM certificate has been configured. The URL after `/#/` is a frontend Vue Router route.
+The website uses the standard CloudFront HTTPS hostname. Vue Router handles the `/#/` application paths.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    Browser[User browser] -->|HTTPS| CF[CloudFront]
-    CF -->|Origin Access Control| S3[(Private S3 / Vue frontend)]
-    Browser -->|HTTPS /api/*| APIGW[API Gateway HTTP API]
-    APIGW -->|AWS_PROXY| Lambda[Lambda container / Flask]
-    Lambda -->|TCP 5432| RDS[(Private RDS PostgreSQL)]
-    Lambda -->|HTTPS 443 via VPC endpoint| SM[Secrets Manager]
-    ECR[ECR repository] -->|Container image v7| Lambda
+    Browser[Browser] -->|HTTPS| CloudFront[Amazon CloudFront]
+    CloudFront -->|OAC| S3[(Amazon S3 / Vue build)]
+    Browser -->|HTTPS API requests| API[Amazon API Gateway HTTP API]
+    API --> Lambda[AWS Lambda / Flask + Gunicorn]
+    Lambda -->|PostgreSQL 5432| RDS[(Amazon RDS / PostgreSQL)]
+    Lambda -->|AWS PrivateLink| Secrets[AWS Secrets Manager]
+    ECR[Amazon ECR / container image] --> Lambda
 ```
 
-- **Frontend:** Vue 3/Vite compiled to static assets in private S3, delivered over HTTPS through CloudFront with Origin Access Control.
-- **Backend:** Flask served by Gunicorn inside a Lambda-compatible Docker image, reached through API Gateway and the Lambda Web Adapter.
-- **Database:** PostgreSQL in private subnets; application records persist in the Ireland RDS instance.
-- **Authentication:** JWT signing key and RDS database credentials are retrieved from AWS Secrets Manager rather than committed to source.
-- **Networking:** VPC `10.85.0.0/16`, private subnet A `10.85.1.0/24` (`eu-west-1a`), private subnet B `10.85.2.0/24` (`eu-west-1b`). RDS accepts PostgreSQL traffic from the Lambda security group; Lambda reaches Secrets Manager via an interface VPC endpoint.
-- **Image registry:** Ireland ECR repository `nase842-flask` uses immutable image tags and scanning on push.
+- **Frontend:** Vue 3 and Vite static build, served through CloudFront from an S3 origin using Origin Access Control.
+- **Backend:** Python/Flask application packaged as an `x86_64` Lambda container image. The Lambda Web Adapter passes API requests to Gunicorn/Flask.
+- **Database:** PostgreSQL on Amazon RDS, deployed in private subnets.
+- **Configuration:** AWS Secrets Manager provides the database credentials and JWT signing key used by the backend.
 
-## Source repositories
+## Configuration and versions
 
-- [Frontend — Vue application](https://github.com/OmarElDeeb-exe/nase842-frontend)
-- [Backend — Flask API and tests](https://github.com/OmarElDeeb-exe/nase842-backend)
-- [Infrastructure — Terraform](https://github.com/OmarElDeeb-exe/nase842-infra)
+These values come from the checked-in Terraform and application build definitions; they are not claims about every independently installed runtime package.
 
-The Terraform resources in **this folder** target Ireland. The [repository root README](../README.md) and root Terraform files primarily document the original Virginia environment.
-
-## Terraform file responsibilities
-
-| Files | Purpose |
+| Component | Configuration |
 | --- | --- |
-| `main.tf`, `.terraform.lock.hcl` | AWS provider, region, default tags, ECR |
-| `network.tf`, `security-groups.tf` | VPC, private subnets, controlled Lambda/RDS network access |
-| `rds.tf`, `rds-instance.tf` | Database subnet group and PostgreSQL snapshot restoration |
-| `lambda.tf`, `lambda-vpc-policy.tf` | Lambda container, execution role, VPC permissions |
-| `api-gateway.tf`, `api-app-route.tf` | HTTP API, Lambda integration, proxy routes |
-| `frontend-s3.tf`, `frontend-cloudfront.tf` | Frontend bucket, OAC, CloudFront distribution |
-| `jwt-secret.tf`, `jwt-access.tf`, `lambda-secrets-policy.tf`, `secrets-endpoint.tf` | Secret resource, IAM permissions, private endpoint |
-| `github-backend-iam.tf`, `github-frontend-iam.tf` | Ireland-scoped OIDC deployment roles and permissions |
+| AWS region | `eu-west-1` |
+| Terraform requirement | `>= 1.10.0` |
+| AWS Terraform provider | `~> 6.0`; lockfile selects `6.71.0` |
+| Lambda image | `v7` (deployed and verified) |
+| Backend base image | `python:3.11-slim-bookworm` |
+| Lambda Web Adapter | `1.1.0` |
+| Gunicorn | `25.3.0` in the backend Dockerfile |
+| PostgreSQL | `15.19` configured in Terraform |
+| RDS instance class | `db.t4g.small` |
+| VPC | `10.85.0.0/16` |
+| Private subnet A | `10.85.1.0/24` (`eu-west-1a`) |
+| Private subnet B | `10.85.2.0/24` (`eu-west-1b`) |
 
-The backend includes both `GET /api/ping` and `ANY /api/{proxy+}` API Gateway routes.
+The Ireland database was restored from a snapshot of the original environment. Both regions operate independently; changes made to one database after restoration are not automatically synchronized with the other.
 
-## Database migration and independence
+## Terraform organization
 
-The Ireland RDS instance was restored from the manual snapshot `nase842-ireland-restore-20261030`, copied from the original Virginia database snapshot. This preserved the data at the time of restoration, allowing existing user accounts and articles to be tested after the rebuild.
+| Configuration | Purpose |
+| --- | --- |
+| `main.tf`, `.terraform.lock.hcl` | AWS provider, region, common tags and ECR |
+| `network.tf`, `security-groups.tf` | VPC, subnets and network access rules |
+| `rds.tf`, `rds-instance.tf` | RDS subnet group and restored database |
+| `lambda.tf`, `lambda-vpc-policy.tf` | Lambda image, runtime settings and IAM |
+| `api-gateway.tf`, `api-app-route.tf` | HTTP API and Lambda integration |
+| `frontend-s3.tf`, `frontend-cloudfront.tf` | Frontend object storage and CDN |
+| `jwt-secret.tf`, `jwt-access.tf`, `lambda-secrets-policy.tf`, `secrets-endpoint.tf` | Secrets Manager connectivity and access |
+| `github-frontend-iam.tf`, `github-backend-iam.tf` | Regional GitHub OIDC deployment roles |
 
-**Important:** The two databases are independent. New articles, password changes, and other writes made after the snapshot in one region do **not** automatically appear in the other.
+The API exposes a health-check route (`GET /api/ping`) and an application proxy route (`ANY /api/{proxy+}`).
 
-Ireland uses `db.t4g.small`, encrypted storage, private connectivity, and a Secrets Manager-managed master password. This is a cost-conscious single-AZ assessment setup, not a production high-availability database architecture.
+## Application deployment
 
-## Application image and deployment status
-
-The Ireland Lambda was verified running image **`v7`** after a backend user-settings/password update and a successful Lambda code update. The `image_uri` in `lambda.tf` references that deployed version.
+The Ireland backend was published to its regional ECR repository and deployed to Lambda as container image **`v7`**. The corresponding Terraform configuration references that tag:
 
 ```hcl
 image_uri = "${aws_ecr_repository.flask.repository_url}:v7"
-
-lifecycle {
-  ignore_changes = [image_uri]
-}
 ```
 
-The lifecycle rule allows application image updates independently of Terraform. The image must already exist in **Ireland ECR** before creating a new Lambda from this configuration.
+The Lambda resource uses `lifecycle { ignore_changes = [image_uri] }` so application image updates can be managed separately from infrastructure changes.
 
-**Deployment distinction:** The existing frontend and backend GitHub Actions workflows still target the **Virginia** resources. The Ireland app assets and `v7` Lambda image were deployed separately. The Ireland-specific IAM roles have been provisioned, but **Ireland CI/CD workflows have not yet been configured and verified**. Do not trigger the current Virginia workflows expecting an Ireland deployment.
+The frontend was built with the Ireland API endpoint:
 
-The frontend build for Ireland needs `VITE_API_HOST=https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com` so browser API calls target the correct regional API.
+```bash
+VITE_API_HOST=https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com pnpm build
+```
 
-## Safe Terraform verification
+The GitHub Actions workflows in the frontend and backend repositories currently target the original `us-east-1` deployment. The Ireland release was deployed separately; this README does not represent those workflows as having been migrated to Ireland.
 
-The working Ireland state was maintained separately from the original Virginia state during the rebuild. Terraform state files, credentials, and secrets are intentionally **not committed** to GitHub.
+## Verification
 
-A fresh checkout can validate configuration syntax:
+The following user flows were checked after the Ireland deployment:
+
+- The site loads via CloudFront and sends application requests to the Ireland API.
+- Existing accounts from the restored database can authenticate.
+- Articles can be published and read after the rebuild.
+- A password change was verified against the Ireland deployment: the previous password was rejected and the new password was accepted.
+- Lambda image `v7` reached the `Active` / `Successful` update status.
+
+For quick **read-only** endpoint checks:
+
+```bash
+curl -fsS https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com/api/ping
+curl -fsS https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com/api/articles
+```
+
+## Working with Terraform
+
+This GitHub folder contains the infrastructure **source**, not the existing Ireland Terraform state. The deployed state is stored separately and is not committed here.
+
+To initialize and validate source from a fresh checkout without connecting to a state backend:
 
 ```bash
 cd terraform-eu-west-1
-terraform init
-terraform fmt -check
+terraform init -backend=false
 terraform validate
 ```
 
-Formatting checks may identify existing style changes without indicating an infrastructure defect. **Do not run `terraform apply` or `terraform destroy` from a fresh checkout.** Without the existing Ireland Terraform state, Terraform can propose duplicate resource creation or destructive changes. Review a plan only from the appropriate working directory with the correct state and AWS credentials.
+**Use the correct existing Ireland state before running a deployment plan or apply.** Do not apply from an empty state against resources that already exist. The original Virginia environment should be managed using its own state and configuration.
 
-Moving these resources into reusable Terraform modules would change Terraform resource addresses; that refactor requires explicit state movement/moved blocks and a carefully inspected plan before any apply.
+## Related repositories
 
-## Functional verification
-
-The following flows were previously verified on the Ireland deployment:
-
-- Website loads over HTTPS; browser requests reach the Ireland API.
-- Existing users restored from the snapshot can log in.
-- New articles can be published and read from the Ireland database.
-- Password update flow works: the old password is rejected and the new password is accepted.
-- API Gateway/Lambda responds on `/api/ping`.
-
-For a final assessment, repeat tests with a **disposable** account and confirm the API endpoint and browser network requests point to Ireland. Do not share passwords, JWTs, or Secrets Manager secret values in screenshots.
-
-## Scope and known tradeoffs
-
-- This assessment uses a shared AWS account; region-specific names, IAM roles, snapshot identifiers, and bucket names should not be blindly reused elsewhere.
-- No cross-region automatic failover or live RDS replication is configured.
-- The Ireland frontend uses the default CloudFront domain rather than a custom hostname.
-- The backend still initializes permissive CORS; a production deployment should restrict allowed origins.
-- Resource naming, RDS backup settings, and environment hardening should be reviewed separately before production use.
-
-**Virginia remains independent:** no part of this README or the Ireland `lambda.tf` image-reference update requires modifying the original us-east-1 deployment.
+- [Frontend source](https://github.com/OmarElDeeb-exe/nase842-frontend)
+- [Backend source](https://github.com/OmarElDeeb-exe/nase842-backend)
+- [Infrastructure repository](https://github.com/OmarElDeeb-exe/nase842-infra)
