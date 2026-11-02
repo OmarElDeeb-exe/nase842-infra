@@ -1,6 +1,6 @@
 # Allow CloudFront to securely access private S3
 resource "aws_cloudfront_origin_access_control" "frontend" {
-  name = "nase842-frontend-oac-eu"
+  name                              = "nase842-frontend-oac-eu"
   description                       = "OAC for NASE-842 Vue frontend"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -13,7 +13,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   is_ipv6_enabled     = true
   comment             = "NASE-842 Vue frontend"
   default_root_object = "index.html"
-  aliases = []
+  aliases             = []
   price_class         = "PriceClass_100"
 
   origin {
@@ -55,8 +55,8 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-  cloudfront_default_certificate = true
-}
+    cloudfront_default_certificate = true
+  }
 
   tags = {
     Name    = "nase842-frontend"
