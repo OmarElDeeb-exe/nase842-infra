@@ -90,7 +90,12 @@ The frontend was built with the Ireland API endpoint:
 VITE_API_HOST=https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com pnpm build
 ```
 
-The GitHub Actions workflows in the frontend and backend repositories currently target the original `us-east-1` deployment. The Ireland release was deployed separately; this README does not represent those workflows as having been migrated to Ireland.
+The original GitHub Actions workflows continue to deploy to `us-east-1`. Dedicated **manual** Ireland workflows have been added, leaving the Virginia workflows unchanged:
+
+- [Ireland backend deployment](https://github.com/OmarElDeeb-exe/nase842-backend/blob/main/.github/workflows/deploy-ireland.yml)
+- [Ireland frontend deployment](https://github.com/OmarElDeeb-exe/nase842-frontend/blob/main/.github/workflows/deploy-ireland.yml)
+
+These Ireland workflows require an explicit `workflow_dispatch` run from the `main` branch. **They have not yet been executed and verified**; the existing Ireland release was deployed separately.
 
 ## Verification
 
