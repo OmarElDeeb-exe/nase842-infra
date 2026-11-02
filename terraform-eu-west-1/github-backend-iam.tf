@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "github_backend_trust" {
 
 # Dedicated backend deployment role
 resource "aws_iam_role" "github_backend" {
-  name = "nase842-github-backend-deploy-eu"
+  name               = "nase842-github-backend-deploy-eu"
   assume_role_policy = data.aws_iam_policy_document.github_backend_trust.json
 
   tags = {
