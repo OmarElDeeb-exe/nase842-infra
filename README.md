@@ -1,5 +1,7 @@
 # NASE-842 — AWS Infrastructure as Code
 
+> **Ireland rebuild (`eu-west-1`):** See the [Ireland environment guide](terraform-eu-west-1/README.md) for the rebuilt infrastructure, deployed URLs, Lambda image `v7`, validation steps, and deployment status. This root README and root Terraform configuration describe the original Virginia (`us-east-1`) environment.
+
 **Terraform / AWS | VPC + RDS + Lambda + API Gateway + S3 + CloudFront | GitHub OIDC**
 
 This repository defines the AWS infrastructure supporting **NASE-842**, a full-stack RealWorld blogging application deployed for a DevOps final assessment. The Vue frontend and Flask backend are adapted from existing open-source RealWorld implementations; this repository documents the cloud infrastructure, security boundaries, and automated delivery added for the assessment.
