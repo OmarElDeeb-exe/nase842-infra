@@ -3,7 +3,7 @@ data "aws_caller_identity" "nase842" {}
 
 # Private S3 bucket for the Vue frontend
 resource "aws_s3_bucket" "frontend" {
-  bucket = "nase842-frontend-rebuild-${data.aws_caller_identity.nase842.account_id}-eu-west-1"
+  bucket        = "nase842-frontend-rebuild-${data.aws_caller_identity.nase842.account_id}-eu-west-1"
   force_destroy = false
 
   tags = {
