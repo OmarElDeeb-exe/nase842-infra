@@ -13,7 +13,7 @@ This directory contains the independent Ireland rebuild of the NASE-842 applicat
 | HTTP API | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com |
 | API health check | https://ezes0o2ub8.execute-api.eu-west-1.amazonaws.com/api/ping |
 | Lambda function | `nase842-flask` |
-| Lambda container image | `nase842-flask:v7` in Ireland ECR |
+| Lambda container image | Immutable CI/CD image tag (latest verified run listed below) |
 | CloudFront distribution ID | `E3TD8SX401FEWB` |
 | Frontend S3 bucket | `nase842-frontend-rebuild-253650698585-eu-west-1` |
 | RDS instance | `nase842-postgres` (`db.t4g.small`) |
@@ -47,7 +47,7 @@ These values come from the checked-in Terraform and application build definition
 | AWS region | `eu-west-1` |
 | Terraform requirement | `>= 1.10.0` |
 | AWS Terraform provider | `~> 6.0`; lockfile selects `6.71.0` |
-| Lambda image | `v7` (deployed and verified) |
+| Terraform baseline image | `v7` (image changes managed separately from Terraform) |
 | Backend base image | `python:3.11-slim-bookworm` |
 | Lambda Web Adapter | `1.1.0` |
 | Gunicorn | `25.3.0` in the backend Dockerfile |
@@ -76,13 +76,13 @@ The API exposes a health-check route (`GET /api/ping`) and an application proxy 
 
 ## Application deployment
 
-The Ireland backend was published to its regional ECR repository and deployed to Lambda as container image **`v7`**. The corresponding Terraform configuration references that tag:
+The original Ireland backend was deployed as image **`v7`**. The successful Ireland backend pipeline run on **2026-11-02** subsequently deployed image tag **`b45e40a96280c24c24c672f32278b11a01426540-41422557063-1`** (verified from the workflow logs). The Terraform configuration retains the `v7` bootstrap reference:
 
 ```hcl
 image_uri = "${aws_ecr_repository.flask.repository_url}:v7"
 ```
 
-The Lambda resource uses `lifecycle { ignore_changes = [image_uri] }` so application image updates can be managed separately from infrastructure changes.
+The Lambda resource uses `lifecycle { ignore_changes = [image_uri] }` so later CI/CD deployments use their own immutable image tags without changing the Terraform configuration. The `image_uri` in Terraform is not expected to match the live Lambda image after a pipeline deployment.
 
 The frontend was built with the Ireland API endpoint:
 
@@ -95,7 +95,7 @@ The original GitHub Actions workflows continue to deploy to `us-east-1`. Dedicat
 - [Ireland backend deployment](https://github.com/OmarElDeeb-exe/nase842-backend/blob/main/.github/workflows/deploy-ireland.yml)
 - [Ireland frontend deployment](https://github.com/OmarElDeeb-exe/nase842-frontend/blob/main/.github/workflows/deploy-ireland.yml)
 
-These Ireland workflows require an explicit `workflow_dispatch` run from the `main` branch. **They have not yet been executed and verified**; the existing Ireland release was deployed separately.
+These Ireland workflows use explicit `workflow_dispatch` triggers on the `main` branch. Both were executed successfully on **2026-11-02**: [backend run #1](https://github.com/OmarElDeeb-exe/nase842-backend/actions/runs/41422557063) and [frontend run #1](https://github.com/OmarElDeeb-exe/nase842-frontend/actions/runs/41422849708).
 
 ## Verification
 
