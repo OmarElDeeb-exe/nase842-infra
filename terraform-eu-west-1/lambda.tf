@@ -31,8 +31,8 @@ resource "aws_ecr_repository_policy" "lambda_access" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid       = "LambdaECRImageRetrievalPolicy"
-      Effect    = "Allow"
+      Sid    = "LambdaECRImageRetrievalPolicy"
+      Effect = "Allow"
       Principal = {
         Service = "lambda.amazonaws.com"
       }
@@ -52,7 +52,7 @@ resource "aws_lambda_function" "flask" {
 
   role          = aws_iam_role.lambda_exec.arn
   package_type  = "Image"
-  image_uri = "${aws_ecr_repository.flask.repository_url}:v7"
+  image_uri     = "${aws_ecr_repository.flask.repository_url}:v7"
   architectures = ["x86_64"]
 
   # Updated configuration for assessment
