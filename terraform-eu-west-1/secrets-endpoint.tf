@@ -37,7 +37,7 @@ resource "aws_vpc_security_group_egress_rule" "lambda_to_secrets" {
 # Private connectivity to AWS Secrets Manager
 resource "aws_vpc_endpoint" "secretsmanager" {
   vpc_id              = aws_vpc.main.id
-  service_name = "com.amazonaws.eu-west-1.secretsmanager"
+  service_name        = "com.amazonaws.eu-west-1.secretsmanager"
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
 
