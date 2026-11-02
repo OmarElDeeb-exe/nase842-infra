@@ -44,8 +44,8 @@ resource "aws_ecr_repository" "flask" {
   }
 
   tags = {
-    Name    = "Change Tag 1"
-    Project = "Change Tag"
+    Name       = "Change Tag 1"
+    Project    = "Change Tag"
     Environemt = "Production"
   }
 }
