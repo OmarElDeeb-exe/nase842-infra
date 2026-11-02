@@ -52,7 +52,7 @@ resource "aws_lambda_function" "flask" {
 
   role          = aws_iam_role.lambda_exec.arn
   package_type  = "Image"
-  image_uri = "${aws_ecr_repository.flask.repository_url}:v6"
+  image_uri = "${aws_ecr_repository.flask.repository_url}:v7"
   architectures = ["x86_64"]
 
   # Updated configuration for assessment
