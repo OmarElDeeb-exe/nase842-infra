@@ -29,7 +29,7 @@ data "aws_iam_policy_document" "github_frontend_trust" {
 
 # Dedicated role for frontend deployment
 resource "aws_iam_role" "github_frontend" {
-  name = "nase842-github-frontend-deploy-eu"
+  name               = "nase842-github-frontend-deploy-eu"
   assume_role_policy = data.aws_iam_policy_document.github_frontend_trust.json
 
   tags = {
